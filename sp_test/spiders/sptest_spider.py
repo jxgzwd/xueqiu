@@ -118,6 +118,8 @@ class SptestSpider(CrawlSpider):
     def user_group_parse(self, response):
         pass
 
+    def git_test(self):
+        pass
 
     def tweetJson2Item(self, tJson):
         tItem = TweetItem()

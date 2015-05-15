@@ -59,6 +59,9 @@ target/
 
 # Xueqiu
 result/
+*.json
+*.html
+.idea
 
 # Mac
 .DS_Store

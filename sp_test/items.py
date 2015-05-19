@@ -15,6 +15,8 @@ class UserItem(scrapy.Item):
     userGender = scrapy.Field()
     userProvince = scrapy.Field()
     userDescription = scrapy.Field()
+    userVerified = scrapy.Field()
+    userVerifiedDescription = scrapy.Field()
     userTopStocks = scrapy.Field()      # 经常讨论的股票
     userDiscussStocks = scrapy.Field()  # 能力圈
     userTweetsCount = scrapy.Field()

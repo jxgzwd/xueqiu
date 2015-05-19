@@ -35,4 +35,4 @@ def showDict(x, n):
                 print item
     return
 
-showjson('./result/user.json')
+showjson('user.json')

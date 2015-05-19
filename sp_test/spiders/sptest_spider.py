@@ -1,5 +1,6 @@
 __author__ = 'WD'
 import json
+import os
 import scrapy
 from scrapy import Spider
 from scrapy.contrib.spiders import CrawlSpider, Rule
@@ -56,10 +57,9 @@ class SptestSpider(CrawlSpider):
 
     def user_parse(self, response):
         print 'get page'
-        inspect_response(response, self)
         jsonStr = response.xpath("//script/text()")[6].extract().split('SNB.profileUser = ')[1]
         userJson = json.loads(jsonStr)
-        json.dump(userJson, open('result\\user.json', 'w'))
+        json.dump(userJson, open('user.json', 'w'))
         userID = response.url.strip().split('/')[-1]
         jsonStr = response.xpath("//div[@class='status_box ']//script/text()").extract()[1].split('SNB.data.statuses = ')[1]\
             .split(';\n  SNB.data.statusType = ')[0]
@@ -83,7 +83,7 @@ class SptestSpider(CrawlSpider):
         #         , headers=self.headers
         # )
 
-        filename = 'result\\'+userID + '.html'
+        filename = 'result'+os.sep+userID + '.html'
         with open(filename, 'wb') as f:
             f.write(response.body)
         return
@@ -95,14 +95,13 @@ class SptestSpider(CrawlSpider):
         jsStr = jsStr.split('SNB.data.statuses = ')[1]
         jsStr = jsStr.split(';\n  SNB.data.statusType = ')[0]
         tmpJson = json.loads(jsStr)
-        f = open('result\\'+userID+'_%d.json' % tmpJson['page'], 'w')
+        f = open('result'+os.sep+userID+'_%d.json' % tmpJson['page'], 'w')
         json.dump(tmpJson, f)
         f.close()
         return
 
     def test_parse(self, response):
         print 'testing'
-        inspect_response(response, self)
         filename = 'test.html'
         with open(filename, 'wb') as f:
             f.write(response.body)
@@ -142,11 +141,13 @@ class SptestSpider(CrawlSpider):
         uItem['userGender'] = uJson['gender']
         uItem['userProvince'] = uJson['province']
         uItem['userDescription'] = uJson['description']
+        uItem['userVerified'] = uJson['verified']
+        uItem['userVerifiedDescription'] = uJson['verified_description']
         uItem['userTopStocks'] = uJson['id']
         uItem['userDiscussStocks'] = uJson['id']
         uItem['userTweetsCount'] = uJson['status_count']
         uItem['userTweets'] = uJson['id']
-        uItem['userFollowersCount'] = uJson['id']
+        uItem['userFollowersCount'] = uJson['followers_count']
         uItem['userFollowers'] = uJson['id']
         uItem['userAttentionCount'] = uJson['id']
         uItem['userAttention'] = uJson['id']

@@ -28,7 +28,7 @@ class UserItem(scrapy.Item):
     userStocksCount = scrapy.Field()    # 自选股
     userStocks = scrapy.Field()
     userGroupsCount = scrapy.Field()    # 组合
-    userGroup = scrapy.Field()
+    userGroups = scrapy.Field()
 
 
 class TweetItem(scrapy.Item):
@@ -37,9 +37,10 @@ class TweetItem(scrapy.Item):
     tweetTime = scrapy.Field()
     tweetTitle = scrapy.Field()
     tweetText = scrapy.Field()
-    tweetRetweetID = scrapy.Field()     # 转发自微博ID
+    tweetRetweetID = scrapy.Field()         # 转发自微博ID
+    tweetRetweetUserID = scrapy.Field()     # 转发自微博用户ID
     tweetReplyCount = scrapy.Field()
-    tweetRetweetCount = scrapy.Field()  # 转发次数
+    tweetRetweetCount = scrapy.Field()      # 转发次数
     tweetDonateCount = scrapy.Field()
     tweetFavCount = scrapy.Field()
     tweetSource = scrapy.Field()

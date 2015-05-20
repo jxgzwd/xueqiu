@@ -51,7 +51,6 @@ class SptestSpider(CrawlSpider):
         filename = 'response_after_login.txt'
         with open(filename, 'wb') as f:
             f.write(response.body)
-        #inspect_response(response, self)
         for url in self.start_urls:
             yield self.make_requests_from_url(url)
 
@@ -59,12 +58,15 @@ class SptestSpider(CrawlSpider):
         print 'get page'
         jsonStr = response.xpath("//script/text()")[6].extract().split('SNB.profileUser = ')[1]
         userJson = json.loads(jsonStr)
-        json.dump(userJson, open('user.json', 'w'))
+        uItem = self.userJson2Item(userJson)
+        # json.dump(userJson, open('user.json', 'w'))
         userID = response.url.strip().split('/')[-1]
         jsonStr = response.xpath("//div[@class='status_box ']//script/text()").extract()[1].split('SNB.data.statuses = ')[1]\
             .split(';\n  SNB.data.statusType = ')[0]
         tweetJson = json.loads(jsonStr)
+
         maxPage = tweetJson['maxPage']
+
         print '**************************'
         print userID
         print maxPage
@@ -74,7 +76,10 @@ class SptestSpider(CrawlSpider):
         for page in range(2, maxPage+1):
             print response.url+'?page=%d' % page
             yield Request(response.url+'?page=%d' % page, callback=self.user_tweet_parse
-                          , meta={'userID': userID}
+                          , meta={
+                    'userID': userID
+                    ,'userItem': uItem
+                }
                           )
 
         # yield Request(
@@ -87,6 +92,12 @@ class SptestSpider(CrawlSpider):
         with open(filename, 'wb') as f:
             f.write(response.body)
         return
+
+    def user_followers_parse(self, response):
+        pass
+
+    def user_attention_parse(self, response):
+        pass
 
     def user_tweet_parse(self, response):
         print 'add page'
@@ -107,7 +118,6 @@ class SptestSpider(CrawlSpider):
             f.write(response.body)
         return
 
-
     def user_info_parse(self, response):
         pass
 
@@ -126,6 +136,10 @@ class SptestSpider(CrawlSpider):
         tItem['tweetTitle'] = tJson['title']
         # tItem['tweetText'] = tJson['text']
         tItem['tweetRetweetID'] = tJson['retweet_status_id']
+        if tJson['retweet_status_id'] != 0:
+            tItem['tweetRetweetUserID'] = tJson['retweeted_status']['user_id']
+        else:
+            tItem['tweetRetweetUserID'] = 0
         tItem['tweetReplyCount'] = tJson['reply_count']
         tItem['tweetRetweetCount'] = tJson['retweet_count']
         tItem['tweetDonateCount'] = tJson['donate_count']
@@ -143,15 +157,16 @@ class SptestSpider(CrawlSpider):
         uItem['userDescription'] = uJson['description']
         uItem['userVerified'] = uJson['verified']
         uItem['userVerifiedDescription'] = uJson['verified_description']
-        uItem['userTopStocks'] = uJson['id']
-        uItem['userDiscussStocks'] = uJson['id']
         uItem['userTweetsCount'] = uJson['status_count']
-        uItem['userTweets'] = uJson['id']
         uItem['userFollowersCount'] = uJson['followers_count']
-        uItem['userFollowers'] = uJson['id']
-        uItem['userAttentionCount'] = uJson['id']
-        uItem['userAttention'] = uJson['id']
+        uItem['userAttentionCount'] = uJson['friends_count']
         uItem['userStocksCount'] = uJson['stocks_count']
-        uItem['userStocks'] = uJson['id']
-        uItem['userGroupsCount'] = uJson['id']
-        uItem['userGroup'] = uJson['id']
+
+        uItem['userFollowers'] = []
+        uItem['userTopStocks'] = []
+        uItem['userDiscussStocks'] = []
+        uItem['userAttention'] = []
+        uItem['userStocks'] = []
+        uItem['userGroupsCount'] = []
+        uItem['userGroups'] = []
+        return uItem

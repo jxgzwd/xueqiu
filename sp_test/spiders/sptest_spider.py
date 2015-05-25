@@ -56,41 +56,49 @@ class SptestSpider(CrawlSpider):
 
     def user_parse(self, response):
         print 'get page'
+        userID = response.url.strip().split('/')[-1]
+
         jsonStr = response.xpath("//script/text()")[6].extract().split('SNB.profileUser = ')[1]
         userJson = json.loads(jsonStr)
-        uItem = self.userJson2Item(userJson)
-        # json.dump(userJson, open('user.json', 'w'))
-        userID = response.url.strip().split('/')[-1]
-        jsonStr = response.xpath("//div[@class='status_box ']//script/text()").extract()[1].split('SNB.data.statuses = ')[1]\
-            .split(';\n  SNB.data.statusType = ')[0]
+        uItem = self.userBaseJson2Item(userJson)
+
+        jsonStr = response.xpath("//div[@class='status_box ']//script/text()").extract()[1]\
+            .split('SNB.data.statuses = ')[1].split(';\n  SNB.data.statusType = ')[0]
         tweetJson = json.loads(jsonStr)
-
-        maxPage = tweetJson['maxPage']
-
-        print '**************************'
-        print userID
-        print maxPage
         for j in tweetJson['statuses']:
             tItem = self.tweetJson2Item(j)
+            uItem['userTweets'].append(tItem)
             yield tItem
-        for page in range(2, maxPage+1):
-            print response.url+'?page=%d' % page
-            yield Request(response.url+'?page=%d' % page, callback=self.user_tweet_parse
-                          , meta={
-                    'userID': userID
-                    ,'userItem': uItem
-                }
+
+        maxPage = tweetJson['maxPage']
+        if maxPage > 1:
+            yield Request(response.url+'?page=2', callback=self.user_tweet_parse
+                          , meta={'userID': userID, 'uItem': uItem, 'baseURL': response.url}
                           )
+        return
 
-        # yield Request(
-        #         'http://xueqiu.com/friendships/groups/members.json?page=1&uid=1956603092&gid=0&_=1431075883261'
-        #         , callback=self.test_parse
-        #         , headers=self.headers
-        # )
-
-        filename = 'result'+os.sep+userID + '.html'
-        with open(filename, 'wb') as f:
-            f.write(response.body)
+    def user_tweet_parse(self, response):
+        print 'add page'
+        uItem = response.meta['uItem']
+        userID = response.meta['userID']
+        baseURL = response.meta['baseURL']
+        jsStr = response.xpath("//div[@class='status_box ']//script/text()").extract()[1]\
+            .split('SNB.data.statuses = ')[1].split(';\n  SNB.data.statusType = ')[0]
+        tweetJson = json.loads(jsStr)
+        for j in tweetJson['statuses']:
+            tItem = self.tweetJson2Item(j)
+            uItem['userTweets'].append(tItem)
+            yield tItem
+        maxPage = tweetJson['maxPage']
+        currentPage = tweetJson['page']
+        if maxPage > currentPage:
+            yield Request(baseURL+'?page=%d' % (currentPage+1), callback=self.user_tweet_parse
+                          , meta={'userID': userID, 'uItem': uItem}
+                          )
+        else:
+            yield Request(response.url+'?page=%d' % (currentPage+1), callback=self.user_tweet_parse
+                          , meta={'userID': userID, 'uItem': uItem}
+                          )
         return
 
     def user_followers_parse(self, response):
@@ -98,18 +106,6 @@ class SptestSpider(CrawlSpider):
 
     def user_attention_parse(self, response):
         pass
-
-    def user_tweet_parse(self, response):
-        print 'add page'
-        userID = response.meta['userID']
-        jsStr = response.xpath("//div[@class='status_box ']//script/text()").extract()[1]
-        jsStr = jsStr.split('SNB.data.statuses = ')[1]
-        jsStr = jsStr.split(';\n  SNB.data.statusType = ')[0]
-        tmpJson = json.loads(jsStr)
-        f = open('result'+os.sep+userID+'_%d.json' % tmpJson['page'], 'w')
-        json.dump(tmpJson, f)
-        f.close()
-        return
 
     def test_parse(self, response):
         print 'testing'
@@ -147,7 +143,7 @@ class SptestSpider(CrawlSpider):
         tItem['tweetSource'] = tJson['source']
         return tItem
 
-    def userJson2Item(selfself, uJson):
+    def userBaseJson2Item(selfself, uJson):
         uItem = UserItem()
         uItem['userID'] = uJson['id']
         uItem['userName'] = uJson['screen_name']
@@ -161,6 +157,7 @@ class SptestSpider(CrawlSpider):
         uItem['userFollowersCount'] = uJson['followers_count']
         uItem['userAttentionCount'] = uJson['friends_count']
         uItem['userStocksCount'] = uJson['stocks_count']
+        uItem['userTweets'] = []
 
         uItem['userFollowers'] = []
         uItem['userTopStocks'] = []
